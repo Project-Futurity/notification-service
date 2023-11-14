@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: notification-service
+  rabbitmq:
+    username: ${RABBIT_USERNAME}
+    password: ${RABBIT_PASSWORD}
+  cloud:
+    function:
+      definition: taskCreationConsumer;taskUpdateConsumer;taskDeleteConsumer
+    stream:
+      bindings:
+        taskCreationConsumer-in-0:
+          destination: task
+          group: task.created
+        taskUpdateConsumer-in-0:
+          destination: task
+          group: task.updated
+        taskDeleteConsumer-in-0:
+          destination: task
+          group: task.deleted
+      rabbit:
+        default:
+          consumer:
+            queue-name-group-only: true
+            bind-queue: false
+            declare-exchange: false
+        bindings:
+          taskCreationConsumer-in-0:
+            consumer:
+              consumer-tag-prefix: ${spring.application.name}-taskCreationConsumer
+          taskUpdateConsumer-in-0:
+            consumer:
+              consumer-tag-prefix: ${spring.application.name}-taskUpdateConsumer
+          taskDeleteConsumer-in-0:
+            consumer:
+              consumer-tag-prefix: ${spring.application.name}-taskDeleteConsumer
+        binder:
+          nodes: ${RABBIT_NODE}
+server:
+  port: 8085
