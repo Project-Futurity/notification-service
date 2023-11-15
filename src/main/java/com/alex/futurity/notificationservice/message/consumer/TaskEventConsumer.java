@@ -1,6 +1,8 @@
 package com.alex.futurity.notificationservice.message.consumer;
 
 import com.alex.futurity.notificationservice.message.model.TaskEvent;
+import com.alex.futurity.notificationservice.scheduler.ScheduleService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 
@@ -8,8 +10,11 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 @Slf4j
+@RequiredArgsConstructor
 public abstract class TaskEventConsumer<T extends TaskEvent> implements Consumer<Message<T>> {
     private static final String HEADER_NAME = "type";
+
+    protected final ScheduleService scheduleService;
 
     @Override
     public void accept(Message<T> message) {

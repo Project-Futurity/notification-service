@@ -11,4 +11,6 @@ import java.time.ZonedDateTime;
 public class CreationTaskEvent extends TaskEvent {
     @NonNull
     private ZonedDateTime deadline;
+    @NonNull
+    private Long userId;
 }

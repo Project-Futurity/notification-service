@@ -13,8 +13,14 @@ public class UpdateTaskEvent extends TaskEvent {
     private ZonedDateTime deadline;
     @NonNull
     private Boolean completed;
+    @NonNull
+    private Long userId;
 
     public boolean hasDeadline() {
         return Objects.nonNull(deadline);
+    }
+
+    public boolean isDeadlineRemoved() {
+        return !hasDeadline();
     }
 }

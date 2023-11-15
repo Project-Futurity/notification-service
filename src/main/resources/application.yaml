@@ -18,12 +18,17 @@ spring:
         taskDeleteConsumer-in-0:
           destination: task
           group: task.deleted
+        notificationPublisher:
+          destination: notification
       rabbit:
         default:
           consumer:
             queue-name-group-only: true
             bind-queue: false
             declare-exchange: false
+          producer:
+            declare-exchange: false
+            exchange-type: direct
         bindings:
           taskCreationConsumer-in-0:
             consumer:
@@ -34,7 +39,23 @@ spring:
           taskDeleteConsumer-in-0:
             consumer:
               consumer-tag-prefix: ${spring.application.name}-taskDeleteConsumer
+          notificationPublisher:
+            producer:
+              routing-key: notification
         binder:
           nodes: ${RABBIT_NODE}
+      output-bindings: notificationPublisher
+  quartz:
+    job-store-type: jdbc
+    wait-for-jobs-to-complete-on-shutdown: true
+    overwrite-existing-jobs: true
+    jdbc:
+      initialize-schema: always
+    properties:
+      org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+  datasource:
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    url: ${DATABASE_URL}
 server:
   port: 8085
