@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
@@ -11,5 +12,9 @@ import java.util.Date;
 public class DateUtils {
     public Date toDate(@NonNull ZonedDateTime zonedDateTime) {
         return Date.from(zonedDateTime.toInstant());
+    }
+
+    public ZonedDateTime now() {
+        return ZonedDateTime.now(ZoneOffset.UTC);
     }
 }

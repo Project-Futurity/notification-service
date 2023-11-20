@@ -1,18 +1,21 @@
 package com.alex.futurity.notificationservice.scheduler;
 
-import com.alex.futurity.notificationservice.utils.DateUtils;
 import com.alex.futurity.notificationservice.scheduler.job.NotificationJob;
 import com.alex.futurity.notificationservice.scheduler.model.ScheduleRequest;
+import com.alex.futurity.notificationservice.utils.DateContext;
+import com.alex.futurity.notificationservice.utils.DateSplitter;
+import com.alex.futurity.notificationservice.utils.DateUtils;
 import com.alex.futurity.notificationservice.utils.TaskConvertor;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.quartz.*;
+import org.springframework.data.util.Pair;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 import static com.alex.futurity.notificationservice.utils.JobExtractor.extractId;
 
@@ -27,67 +30,56 @@ public class ScheduleService {
 
     @SneakyThrows
     public void unscheduleTask(@NonNull Long taskId) {
-        TriggerKey key = buildTriggerKey(taskId);
+        List<TriggerKey> keys = List.of(
+                buildTriggerKey(taskId, DateContext.DatePart.DAY),
+                buildTriggerKey(taskId, DateContext.DatePart.MINUTES)
+        );
 
-        log.info("Unscheduling task with id={}", key.getName());
-        scheduler.unscheduleJob(key);
-        log.info("Task with id={} has been unscheduled", key.getName());
+        log.info("Unscheduling task with id={}", taskId);
+        scheduler.unscheduleJobs(keys);
+        log.info("Task with id={} has been unscheduled", taskId);
     }
 
-    @SneakyThrows
     public void scheduleTask(@NonNull ScheduleRequest scheduleRequest) {
-        Trigger trigger = buildTrigger(scheduleRequest);
-        JobDetail jobDetail = buildJobDetail(scheduleRequest);
-
-        scheduleJob(trigger, jobDetail);
+        DateSplitter.splitDate(scheduleRequest.getTimeToSchedule()).stream()
+                .map(context -> Pair.of(
+                        buildTrigger(context, scheduleRequest.getTaskId()),
+                        buildJobDetail(scheduleRequest, context))
+                )
+                .forEach(pair -> scheduleJob(pair.getFirst(), pair.getSecond()));
     }
 
     @SneakyThrows
     public void rescheduleTask(@NonNull ScheduleRequest scheduleRequest) {
-        TriggerKey triggerKey = buildTriggerKey(scheduleRequest.getTaskId());
-        Trigger trigger = buildTrigger(scheduleRequest);
-
-        if (scheduler.checkExists(triggerKey)) {
-            rescheduleJob(triggerKey, trigger);
-        } else {
-            scheduleJob(trigger, buildJobDetail(scheduleRequest));
-        }
+        unscheduleTask(scheduleRequest.getTaskId());
+        scheduleTask(scheduleRequest);
     }
 
-    private void rescheduleJob(TriggerKey triggerKey, Trigger trigger) throws SchedulerException {
-        log.info("Rescheduling job with {} id for date {}", triggerKey.getName(), trigger.getStartTime());
-        scheduler.rescheduleJob(triggerKey, trigger);
-        log.info("Job with {} id has been rescheduled", triggerKey.getName());
-    }
-
-    private void scheduleJob(Trigger trigger, JobDetail jobDetail) throws SchedulerException {
+    @SneakyThrows
+    private void scheduleJob(Trigger trigger, JobDetail jobDetail) {
         log.info("Scheduling job with {} id for date {}", extractId(jobDetail), trigger.getStartTime());
         scheduler.scheduleJob(jobDetail, trigger);
         log.info("Job with {} id has been scheduled", extractId(jobDetail));
     }
 
-    private static Trigger buildTrigger(ScheduleRequest scheduleRequest) {
-        Date startAt = DateUtils.toDate(scheduleRequest.getTimeToSchedule());
+    private static Trigger buildTrigger(DateContext context, Long taskId) {
+        Date startAt = DateUtils.toDate(context.getDeadline());
 
         return TriggerBuilder.newTrigger()
-                .withIdentity(buildIdentity(scheduleRequest.getTaskId()))
+                .withIdentity(TriggerKey.triggerKey(taskId.toString(), context.getDatePart()))
                 .startAt(startAt)
                 .build();
     }
 
-    private static JobDetail buildJobDetail(ScheduleRequest scheduleRequest) {
+    private static JobDetail buildJobDetail(ScheduleRequest scheduleRequest, DateContext context) {
         return JobBuilder.newJob(NotificationJob.class)
                 .withDescription("Schedule notification")
-                .usingJobData(TaskConvertor.toJobDataMap(scheduleRequest))
+                .usingJobData(TaskConvertor.toJobDataMap(scheduleRequest, context))
                 .storeDurably()
                 .build();
     }
 
-    private static TriggerKey buildTriggerKey(@NotNull Long taskId) {
-        return TriggerKey.triggerKey(buildIdentity(taskId));
-    }
-
-    private static String buildIdentity(Long key) {
-        return Long.toString(key);
+    private static TriggerKey buildTriggerKey(Long taskId, DateContext.DatePart datePart) {
+        return TriggerKey.triggerKey(taskId.toString(), datePart.getLeftTime());
     }
 }

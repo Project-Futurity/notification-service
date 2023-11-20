@@ -1,5 +1,6 @@
 package com.alex.futurity.notificationservice.scheduler.job;
 
+import com.alex.futurity.notificationservice.model.JobContext;
 import com.alex.futurity.notificationservice.model.TaskInfo;
 import com.alex.futurity.notificationservice.notification.Notification;
 import com.alex.futurity.notificationservice.notification.NotificationDeadlinePublisher;
@@ -19,24 +20,18 @@ import java.time.ZonedDateTime;
 public class NotificationJob extends QuartzJobBean {
     private final NotificationDeadlinePublisher publisher;
 
-    private static final String MESSAGE_FORMAT = "Deadline is cumming for '%s'";
-
     @Override
     protected void executeInternal(JobExecutionContext context) {
         log.info("Triggered job with id {}", JobExtractor.extractId(context.getTrigger()));
-        TaskInfo taskInfo = TaskConvertor.toTask(context.getMergedJobDataMap());
+        JobContext jobContext = TaskConvertor.getContext(context.getMergedJobDataMap());
 
         Notification notification = Notification.builder()
-                .taskId(taskInfo.getTaskId())
-                .userId(taskInfo.getUserId())
-                .deadline(taskInfo.getTimeToSchedule())
-                .message(buildMessage(taskInfo.getTimeToSchedule()))
+                .taskId(jobContext.getTaskId())
+                .userId(jobContext.getUserId())
+                .deadline(jobContext.getTimeToSchedule())
+                .part(jobContext.getDatePart().getLeftTime())
                 .build();
 
         publisher.publish(notification);
-    }
-
-    private static String buildMessage(ZonedDateTime deadline) {
-        return MESSAGE_FORMAT.formatted(deadline);
     }
 }

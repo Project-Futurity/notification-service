@@ -16,5 +16,5 @@ public class Notification {
     @NonNull
     ZonedDateTime deadline;
     @NonNull
-    String message;
+    String part;
 }
