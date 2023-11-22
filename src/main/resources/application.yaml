@@ -6,6 +6,7 @@ spring:
   rabbitmq:
     username: ${RABBIT_USERNAME}
     password: ${RABBIT_PASSWORD}
+    addresses: ${RABBIT_NODE}
   cloud:
     function:
       definition: taskCreationConsumer;taskUpdateConsumer;taskDeleteConsumer
@@ -44,8 +45,6 @@ spring:
           notificationPublisher:
             producer:
               routing-key: notification
-        binder:
-          nodes: ${RABBIT_NODE}
       output-bindings: notificationPublisher
   quartz:
     job-store-type: jdbc
