@@ -21,11 +21,11 @@ public class DateSplitter {
             return List.of(oneDayContext(date), fiveMinutesContext(date));
         }
 
-        if (isLessThenFiveMinutes(date)) {
-            return Collections.emptyList();
+        if (isLaterThenFiveMinutes(date)) {
+            return List.of(fiveMinutesContext(date));
         }
 
-        return List.of(fiveMinutesContext(date));
+        return Collections.emptyList();
     }
 
     private static DateContext fiveMinutesContext(ZonedDateTime dateTime) {
@@ -40,7 +40,7 @@ public class DateSplitter {
         return ChronoUnit.DAYS.between(DateUtils.now(), dateTime) > 1;
     }
 
-    private static boolean isLessThenFiveMinutes(ZonedDateTime dateTime) {
-        return ChronoUnit.MINUTES.between(DateUtils.now(), dateTime) < 5;
+    private static boolean isLaterThenFiveMinutes(ZonedDateTime dateTime) {
+        return ChronoUnit.MINUTES.between(DateUtils.now(), dateTime) > 5;
     }
 }
