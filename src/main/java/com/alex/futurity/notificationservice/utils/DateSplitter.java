@@ -37,10 +37,10 @@ public class DateSplitter {
     }
 
     private static boolean isLaterThenOneDay(ZonedDateTime dateTime) {
-        return ChronoUnit.DAYS.between(DateUtils.now(), dateTime) > 1;
+        return ChronoUnit.DAYS.between(DateUtils.now(), dateTime) >= 1;
     }
 
     private static boolean isLaterThenFiveMinutes(ZonedDateTime dateTime) {
-        return ChronoUnit.MINUTES.between(DateUtils.now(), dateTime) > 5;
+        return ChronoUnit.MINUTES.between(DateUtils.now(), dateTime) >= 5;
     }
 }
